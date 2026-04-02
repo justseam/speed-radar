@@ -1,0 +1,1625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Speed Radar</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c28;
+    --border: #2a2a3a;
+    --text: #e8e8f0;
+    --text-dim: #8888a0;
+    --accent: #00d4ff;
+    --accent-dim: rgba(0,212,255,0.15);
+    --danger: #ff4444;
+    --warning: #ffaa00;
+    --success: #44ff88;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+    height: 100dvh;
+    width: 100vw;
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* -- SCREENS -- */
+  .screen { display: none; height: 100dvh; width: 100vw; position: absolute; top: 0; left: 0; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* -- CALIBRATION -- */
+  #calibration-screen {
+    background: var(--bg);
+    padding: 20px;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .cal-container {
+    max-width: 400px;
+    width: 100%;
+  }
+
+  .cal-header {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+
+  .cal-header h1 {
+    font-size: 28px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), #0088ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 6px;
+  }
+
+  .cal-header p {
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .cal-step-indicator {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+
+  .cal-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: background 0.3s;
+  }
+
+  .cal-dot.active { background: var(--accent); }
+  .cal-dot.done { background: var(--success); }
+
+  .cal-step {
+    display: none;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .cal-step.active { display: flex; }
+
+  .cal-step h2 {
+    font-size: 18px;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .cal-step p.desc {
+    font-size: 13px;
+    color: var(--text-dim);
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  .cal-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .cal-field label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .cal-field input, .cal-field select {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+    outline: none;
+    -webkit-appearance: none;
+  }
+
+  .cal-field input:focus, .cal-field select:focus {
+    border-color: var(--accent);
+  }
+
+  .cal-field .unit {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  .cal-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+  }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1.5px solid var(--border);
+  }
+
+  .btn:active { transform: scale(0.97); }
+
+  /* -- MAIN RADAR SCREEN -- */
+  #radar-screen {
+    background: #000;
+  }
+
+  .video-container {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  #camera-feed {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  #detection-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  #processing-canvas {
+    display: none;
+  }
+
+  /* Speed HUD */
+  .speed-hud {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .speed-display {
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 12px 20px;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,0.1);
+    pointer-events: auto;
+  }
+
+  .speed-display .speed-value {
+    font-size: 52px;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    transition: color 0.2s;
+  }
+
+  .speed-display .speed-unit {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  .speed-display.over-limit .speed-value {
+    color: var(--danger);
+    animation: pulse-red 0.5s ease-in-out infinite alternate;
+  }
+
+  @keyframes pulse-red {
+    from { opacity: 1; }
+    to { opacity: 0.6; }
+  }
+
+  .hud-status {
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 8px 14px;
+    border: 1px solid rgba(255,255,255,0.1);
+    pointer-events: auto;
+  }
+
+  .status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    margin-right: 6px;
+    animation: blink 2s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .status-dot.detecting { background: var(--warning); animation: none; }
+  .status-dot.idle { background: var(--text-dim); }
+
+  .status-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* Bottom bar */
+  .bottom-bar {
+    display: flex;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(10px);
+    padding: 10px 16px;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+    gap: 10px;
+    align-items: center;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    z-index: 10;
+  }
+
+  .bar-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .bar-btn.active {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .log-count {
+    background: var(--accent);
+    color: #000;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 8px;
+    margin-left: 4px;
+  }
+
+  /* -- LOG PANEL -- */
+  .log-panel {
+    position: absolute;
+    bottom: 60px;
+    left: 0;
+    right: 0;
+    max-height: 45%;
+    background: rgba(0,0,0,0.9);
+    backdrop-filter: blur(15px);
+    border-top: 1px solid var(--border);
+    border-radius: 16px 16px 0 0;
+    overflow: hidden;
+    display: none;
+    flex-direction: column;
+    z-index: 20;
+  }
+
+  .log-panel.visible { display: flex; }
+
+  .log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .log-header h3 {
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .log-header .log-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .log-header .log-actions button {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dim);
+    cursor: pointer;
+  }
+
+  .log-entries {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    flex: 1;
+  }
+
+  .log-entry {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    gap: 12px;
+  }
+
+  .log-speed {
+    font-size: 22px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    min-width: 70px;
+  }
+
+  .log-speed.normal { color: var(--accent); }
+  .log-speed.over { color: var(--danger); }
+
+  .log-meta {
+    flex: 1;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .log-direction {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--surface2);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  .log-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+
+  /* -- SETTINGS SCREEN -- */
+  #settings-screen {
+    background: var(--bg);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .settings-header {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    padding-top: max(16px, env(safe-area-inset-top));
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 5;
+  }
+
+  .settings-header h2 {
+    flex: 1;
+    font-size: 18px;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .settings-header .back-btn {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+
+  .settings-section {
+    padding: 20px;
+  }
+
+  .settings-section h3 {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 12px;
+  }
+
+  .setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .setting-label {
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  .setting-desc {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  .setting-control select, .setting-control input[type="number"] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 14px;
+    color: var(--text);
+    -webkit-appearance: none;
+    outline: none;
+    text-align: right;
+    min-width: 80px;
+  }
+
+  /* Toggle switch */
+  .toggle {
+    position: relative;
+    width: 48px;
+    height: 28px;
+    cursor: pointer;
+  }
+
+  .toggle input { display: none; }
+
+  .toggle .slider {
+    position: absolute;
+    inset: 0;
+    background: var(--surface2);
+    border-radius: 14px;
+    border: 1.5px solid var(--border);
+    transition: all 0.3s;
+  }
+
+  .toggle .slider::after {
+    content: '';
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    top: 2px;
+    left: 2px;
+    transition: all 0.3s;
+  }
+
+  .toggle input:checked + .slider {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .toggle input:checked + .slider::after {
+    transform: translateX(20px);
+    background: #000;
+  }
+
+  .setting-btn {
+    width: 100%;
+    padding: 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px;
+    text-align: center;
+  }
+
+  .setting-btn.danger {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+
+  /* Flash overlay for speed alerts */
+  .flash-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(255,0,0,0.15);
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.1s;
+  }
+
+  .flash-overlay.active {
+    opacity: 1;
+  }
+</style>
+</head>
+<body>
+
+<!-- FLASH OVERLAY -->
+<div class="flash-overlay" id="flash-overlay"></div>
+
+<!-- CALIBRATION SCREEN -->
+<div class="screen active" id="calibration-screen">
+  <div class="cal-container">
+    <div class="cal-header">
+      <h1>Speed Radar</h1>
+      <p>Camera-based vehicle speed detection</p>
+    </div>
+
+    <div class="cal-step-indicator">
+      <div class="cal-dot active" data-step="0"></div>
+      <div class="cal-dot" data-step="1"></div>
+      <div class="cal-dot" data-step="2"></div>
+      <div class="cal-dot" data-step="3"></div>
+    </div>
+
+    <!-- Step 1: Distance -->
+    <div class="cal-step active" data-step="0">
+      <h2>Distance to Road</h2>
+      <p class="desc">Measure the distance from where you'll place your phone to the center of the nearest lane.</p>
+      <div class="cal-field">
+        <label>Distance</label>
+        <input type="number" id="cal-distance" value="30" min="5" max="200" step="1">
+        <span class="unit">feet from camera to center of road</span>
+      </div>
+      <div class="cal-buttons">
+        <button class="btn btn-primary" onclick="calNext()">Next</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Height -->
+    <div class="cal-step" data-step="1">
+      <h2>Camera Height</h2>
+      <p class="desc">How high is the camera from the ground? A window sill or tripod height.</p>
+      <div class="cal-field">
+        <label>Height</label>
+        <input type="number" id="cal-height" value="4" min="1" max="30" step="0.5">
+        <span class="unit">feet above ground level</span>
+      </div>
+      <div class="cal-buttons">
+        <button class="btn btn-secondary" onclick="calPrev()">Back</button>
+        <button class="btn btn-primary" onclick="calNext()">Next</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Road Width -->
+    <div class="cal-step" data-step="2">
+      <h2>Road Width</h2>
+      <p class="desc">Estimate the width of the road (both lanes if applicable). Standard residential road is about 24 feet.</p>
+      <div class="cal-field">
+        <label>Road Width</label>
+        <input type="number" id="cal-road-width" value="24" min="8" max="100" step="1">
+        <span class="unit">feet across the road surface</span>
+      </div>
+      <div class="cal-buttons">
+        <button class="btn btn-secondary" onclick="calPrev()">Back</button>
+        <button class="btn btn-primary" onclick="calNext()">Next</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Camera Angle -->
+    <div class="cal-step" data-step="3">
+      <h2>Camera Orientation</h2>
+      <p class="desc">Which direction are you pointing the camera relative to the road?</p>
+      <div class="cal-field">
+        <label>Viewing Angle</label>
+        <select id="cal-angle">
+          <option value="90">Perpendicular (90 degrees)</option>
+          <option value="75">Slight angle (75 degrees)</option>
+          <option value="60">Moderate angle (60 degrees)</option>
+          <option value="45">Strong angle (45 degrees)</option>
+        </select>
+        <span class="unit">Perpendicular gives best accuracy</span>
+      </div>
+      <div class="cal-buttons">
+        <button class="btn btn-secondary" onclick="calPrev()">Back</button>
+        <button class="btn btn-primary" onclick="startRadar()">Start Radar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN RADAR SCREEN -->
+<div class="screen" id="radar-screen">
+  <div class="video-container">
+    <video id="camera-feed" autoplay playsinline muted></video>
+    <canvas id="detection-canvas"></canvas>
+    <canvas id="processing-canvas"></canvas>
+
+    <div class="speed-hud">
+      <div class="speed-display" id="speed-display">
+        <div class="speed-value" id="speed-value">--</div>
+        <div class="speed-unit" id="speed-unit">MPH</div>
+      </div>
+      <div class="hud-status">
+        <span class="status-dot" id="status-dot"></span>
+        <span class="status-text" id="status-text">Monitoring</span>
+      </div>
+    </div>
+
+    <!-- Log panel -->
+    <div class="log-panel" id="log-panel">
+      <div class="log-header">
+        <h3>Speed Log</h3>
+        <div class="log-actions">
+          <button onclick="exportCSV()">Export</button>
+          <button onclick="clearLog()">Clear</button>
+        </div>
+      </div>
+      <div class="log-entries" id="log-entries">
+        <div class="log-empty">No vehicles detected yet</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <button class="bar-btn" id="log-toggle" onclick="toggleLog()">
+      Log <span class="log-count" id="log-count">0</span>
+    </button>
+    <button class="bar-btn" onclick="showSettings()">Settings</button>
+    <div style="flex:1"></div>
+    <button class="bar-btn" id="night-btn" onclick="toggleNightMode()">Night</button>
+  </div>
+</div>
+
+<!-- SETTINGS SCREEN -->
+<div class="screen" id="settings-screen">
+  <div class="settings-header">
+    <button class="back-btn" onclick="hideSettings()">Done</button>
+    <h2>Settings</h2>
+    <div style="width:50px"></div>
+  </div>
+
+  <div class="settings-section">
+    <h3>Speed</h3>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Speed Units</div>
+      </div>
+      <div class="setting-control">
+        <select id="set-units" onchange="updateSetting('units', this.value)">
+          <option value="mph">MPH</option>
+          <option value="kmh">KM/H</option>
+        </select>
+      </div>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Speed Limit</div>
+        <div class="setting-desc">Alert when exceeded</div>
+      </div>
+      <div class="setting-control">
+        <input type="number" id="set-limit" value="25" min="5" max="100" step="5" onchange="updateSetting('speedLimit', this.value)">
+      </div>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Speed Alerts</div>
+        <div class="setting-desc">Flash screen when over limit</div>
+      </div>
+      <div class="setting-control">
+        <label class="toggle">
+          <input type="checkbox" id="set-alerts" checked onchange="updateSetting('alerts', this.checked)">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Sound Alerts</div>
+        <div class="setting-desc">Beep when over limit</div>
+      </div>
+      <div class="setting-control">
+        <label class="toggle">
+          <input type="checkbox" id="set-sound" onchange="updateSetting('sound', this.checked)">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <h3>Detection</h3>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Sensitivity</div>
+        <div class="setting-desc">Motion detection threshold</div>
+      </div>
+      <div class="setting-control">
+        <select id="set-sensitivity" onchange="updateSetting('sensitivity', this.value)">
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+          <option value="high">High</option>
+        </select>
+      </div>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Night Mode</div>
+        <div class="setting-desc">Headlight detection</div>
+      </div>
+      <div class="setting-control">
+        <select id="set-night" onchange="updateSetting('nightMode', this.value)">
+          <option value="auto">Auto</option>
+          <option value="on">Always On</option>
+          <option value="off">Off</option>
+        </select>
+      </div>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Camera</div>
+      </div>
+      <div class="setting-control">
+        <select id="set-camera" onchange="switchCamera(this.value)">
+          <option value="environment">Back</option>
+          <option value="user">Front</option>
+        </select>
+      </div>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Show Tracking</div>
+        <div class="setting-desc">Display detection overlay</div>
+      </div>
+      <div class="setting-control">
+        <label class="toggle">
+          <input type="checkbox" id="set-overlay" checked onchange="updateSetting('showOverlay', this.checked)">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Keep Screen On</div>
+        <div class="setting-desc">Prevent screen sleep</div>
+      </div>
+      <div class="setting-control">
+        <label class="toggle">
+          <input type="checkbox" id="set-wakelock" checked onchange="toggleWakeLock(this.checked)">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <h3>Calibration</h3>
+    <div id="cal-summary" style="font-size:13px; color:var(--text-dim); margin-bottom:12px; line-height:1.6;"></div>
+    <button class="setting-btn" onclick="recalibrate()">Recalibrate</button>
+  </div>
+
+  <div class="settings-section">
+    <h3>Data</h3>
+    <button class="setting-btn" onclick="exportCSV()">Export Speed Log (CSV)</button>
+    <button class="setting-btn danger" onclick="clearLog()">Clear All Data</button>
+  </div>
+
+  <div style="padding: 20px; text-align: center;">
+    <p style="font-size: 11px; color: var(--text-dim);">Speed Radar v1.0<br>Camera-based speed estimation<br>Accuracy varies with calibration quality</p>
+  </div>
+</div>
+
+<script>
+// ========== STATE ==========
+let settings = {
+  units: 'mph',
+  speedLimit: 25,
+  alerts: true,
+  sound: false,
+  sensitivity: 'medium',
+  nightMode: 'auto',
+  showOverlay: true,
+  camera: 'environment',
+};
+
+let calibration = {
+  distance: 30,
+  height: 4,
+  roadWidth: 24,
+  angle: 90,
+  pixelsPerFoot: 0, // computed
+};
+
+let speedLog = [];
+let calStep = 0;
+let isRunning = false;
+let isNightActive = false;
+let wakeLock = null;
+
+// Detection state
+let prevFrame = null;
+let prevPrevFrame = null;
+let trackedObjects = [];
+let nextObjectId = 0;
+let lastDetectedSpeed = 0;
+let currentSpeed = null;
+let speedDecayTimer = null;
+
+// Canvas/Video refs
+let video, canvas, ctx, procCanvas, procCtx;
+let videoWidth = 0, videoHeight = 0;
+
+// ========== INIT ==========
+function init() {
+  loadState();
+
+  // If calibrated before, skip to radar
+  if (localStorage.getItem('sr-calibrated')) {
+    showScreen('radar-screen');
+    startCamera();
+  }
+}
+
+function loadState() {
+  try {
+    const s = localStorage.getItem('sr-settings');
+    if (s) settings = { ...settings, ...JSON.parse(s) };
+    const c = localStorage.getItem('sr-calibration');
+    if (c) calibration = { ...calibration, ...JSON.parse(c) };
+    const l = localStorage.getItem('sr-log');
+    if (l) speedLog = JSON.parse(l);
+  } catch (e) {}
+}
+
+function saveState() {
+  localStorage.setItem('sr-settings', JSON.stringify(settings));
+  localStorage.setItem('sr-calibration', JSON.stringify(calibration));
+  localStorage.setItem('sr-log', JSON.stringify(speedLog.slice(-500))); // keep last 500
+}
+
+// ========== CALIBRATION ==========
+function calNext() {
+  const steps = document.querySelectorAll('.cal-step');
+  const dots = document.querySelectorAll('.cal-dot');
+
+  // Save current step value
+  saveCalStep(calStep);
+
+  dots[calStep].classList.remove('active');
+  dots[calStep].classList.add('done');
+  steps[calStep].classList.remove('active');
+
+  calStep++;
+  if (calStep < steps.length) {
+    dots[calStep].classList.add('active');
+    steps[calStep].classList.add('active');
+  }
+}
+
+function calPrev() {
+  const steps = document.querySelectorAll('.cal-step');
+  const dots = document.querySelectorAll('.cal-dot');
+
+  dots[calStep].classList.remove('active');
+  steps[calStep].classList.remove('active');
+
+  calStep--;
+  dots[calStep].classList.remove('done');
+  dots[calStep].classList.add('active');
+  steps[calStep].classList.add('active');
+}
+
+function saveCalStep(step) {
+  switch (step) {
+    case 0: calibration.distance = parseFloat(document.getElementById('cal-distance').value) || 30; break;
+    case 1: calibration.height = parseFloat(document.getElementById('cal-height').value) || 4; break;
+    case 2: calibration.roadWidth = parseFloat(document.getElementById('cal-road-width').value) || 24; break;
+    case 3: calibration.angle = parseInt(document.getElementById('cal-angle').value) || 90; break;
+  }
+}
+
+function computeCalibration() {
+  // Horizontal FOV of typical phone camera ~ 65-75 degrees, use 70
+  const hFov = 70;
+  const angleRad = (calibration.angle * Math.PI) / 180;
+  const fovRad = (hFov * Math.PI) / 180;
+
+  // Width of view at road distance
+  const viewWidth = 2 * calibration.distance * Math.tan(fovRad / 2);
+
+  // Adjust for non-perpendicular viewing
+  const effectiveViewWidth = viewWidth / Math.sin(angleRad);
+
+  // Pixels per foot at the road
+  calibration.pixelsPerFoot = (videoWidth || 640) / effectiveViewWidth;
+
+  saveState();
+}
+
+function startRadar() {
+  saveCalStep(calStep);
+  localStorage.setItem('sr-calibrated', 'true');
+  showScreen('radar-screen');
+  startCamera();
+}
+
+function recalibrate() {
+  calStep = 0;
+  // Reset UI
+  document.querySelectorAll('.cal-step').forEach((s, i) => s.classList.toggle('active', i === 0));
+  document.querySelectorAll('.cal-dot').forEach((d, i) => {
+    d.classList.toggle('active', i === 0);
+    d.classList.remove('done');
+  });
+  // Fill current values
+  document.getElementById('cal-distance').value = calibration.distance;
+  document.getElementById('cal-height').value = calibration.height;
+  document.getElementById('cal-road-width').value = calibration.roadWidth;
+  document.getElementById('cal-angle').value = calibration.angle;
+
+  showScreen('calibration-screen');
+}
+
+// ========== SCREENS ==========
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showSettings() {
+  // Update settings UI
+  document.getElementById('set-units').value = settings.units;
+  document.getElementById('set-limit').value = settings.speedLimit;
+  document.getElementById('set-alerts').checked = settings.alerts;
+  document.getElementById('set-sound').checked = settings.sound;
+  document.getElementById('set-sensitivity').value = settings.sensitivity;
+  document.getElementById('set-night').value = settings.nightMode;
+  document.getElementById('set-overlay').checked = settings.showOverlay;
+  document.getElementById('set-camera').value = settings.camera;
+
+  // Cal summary
+  document.getElementById('cal-summary').innerHTML =
+    `Distance: <b>${calibration.distance} ft</b> | Height: <b>${calibration.height} ft</b><br>` +
+    `Road Width: <b>${calibration.roadWidth} ft</b> | Angle: <b>${calibration.angle}&deg;</b>`;
+
+  showScreen('settings-screen');
+}
+
+function hideSettings() {
+  showScreen('radar-screen');
+}
+
+function updateSetting(key, value) {
+  settings[key] = value;
+  if (key === 'units') {
+    document.getElementById('speed-unit').textContent = value.toUpperCase();
+  }
+  saveState();
+}
+
+// ========== CAMERA ==========
+async function startCamera() {
+  video = document.getElementById('camera-feed');
+  canvas = document.getElementById('detection-canvas');
+  ctx = canvas.getContext('2d');
+  procCanvas = document.getElementById('processing-canvas');
+  procCtx = procCanvas.getContext('2d', { willReadFrequently: true });
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: settings.camera,
+        width: { ideal: 640 },
+        height: { ideal: 480 },
+        frameRate: { ideal: 30 }
+      }
+    });
+    video.srcObject = stream;
+
+    video.onloadedmetadata = () => {
+      videoWidth = video.videoWidth;
+      videoHeight = video.videoHeight;
+      canvas.width = videoWidth;
+      canvas.height = videoHeight;
+      procCanvas.width = videoWidth;
+      procCanvas.height = videoHeight;
+
+      computeCalibration();
+      isRunning = true;
+      requestAnimationFrame(detectLoop);
+      requestWakeLock();
+      updateLogUI();
+    };
+  } catch (err) {
+    alert('Camera access required. Please allow camera permission and reload.');
+  }
+}
+
+async function switchCamera(facing) {
+  settings.camera = facing;
+  saveState();
+  // Stop current stream
+  if (video && video.srcObject) {
+    video.srcObject.getTracks().forEach(t => t.stop());
+  }
+  prevFrame = null;
+  prevPrevFrame = null;
+  trackedObjects = [];
+  await startCamera();
+}
+
+// ========== WAKE LOCK ==========
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+    }
+  } catch (e) {}
+}
+
+function toggleWakeLock(on) {
+  if (on) {
+    requestWakeLock();
+  } else if (wakeLock) {
+    wakeLock.release();
+    wakeLock = null;
+  }
+}
+
+// ========== DETECTION LOOP ==========
+function detectLoop() {
+  if (!isRunning) return;
+
+  // Draw video frame to processing canvas
+  procCtx.drawImage(video, 0, 0, videoWidth, videoHeight);
+  const frame = procCtx.getImageData(0, 0, videoWidth, videoHeight);
+
+  // Convert to grayscale
+  const gray = toGrayscale(frame);
+
+  // Check if night mode should be active
+  if (settings.nightMode === 'auto') {
+    const avgBrightness = gray.reduce((s, v) => s + v, 0) / gray.length;
+    isNightActive = avgBrightness < 60;
+  } else {
+    isNightActive = settings.nightMode === 'on';
+  }
+
+  document.getElementById('night-btn').classList.toggle('active', isNightActive);
+
+  if (prevPrevFrame) {
+    let motionMap;
+
+    if (isNightActive) {
+      // Night mode: detect bright spots (headlights)
+      motionMap = detectHeadlights(gray);
+    } else {
+      // Day mode: three-frame differencing
+      motionMap = threeFrameDiff(prevPrevFrame, prevFrame, gray);
+    }
+
+    // Find blobs in motion map
+    const blobs = findBlobs(motionMap, videoWidth, videoHeight);
+
+    // Track blobs across frames
+    trackBlobs(blobs);
+
+    // Draw overlay
+    if (settings.showOverlay) {
+      drawOverlay();
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // Update speed display
+    updateSpeedDisplay();
+  }
+
+  // Shift frames
+  prevPrevFrame = prevFrame;
+  prevFrame = gray;
+
+  requestAnimationFrame(detectLoop);
+}
+
+function toGrayscale(imageData) {
+  const data = imageData.data;
+  const gray = new Uint8Array(data.length / 4);
+  for (let i = 0; i < gray.length; i++) {
+    const j = i * 4;
+    gray[i] = (data[j] * 0.299 + data[j + 1] * 0.587 + data[j + 2] * 0.114) | 0;
+  }
+  return gray;
+}
+
+function threeFrameDiff(frame1, frame2, frame3) {
+  const thresholds = { low: 35, medium: 25, high: 15 };
+  const thresh = thresholds[settings.sensitivity] || 25;
+  const len = frame1.length;
+  const result = new Uint8Array(len);
+
+  for (let i = 0; i < len; i++) {
+    const d1 = Math.abs(frame2[i] - frame1[i]);
+    const d2 = Math.abs(frame3[i] - frame2[i]);
+    result[i] = (d1 > thresh && d2 > thresh) ? 255 : 0;
+  }
+  return result;
+}
+
+function detectHeadlights(gray) {
+  const thresholds = { low: 240, medium: 220, high: 200 };
+  const thresh = thresholds[settings.sensitivity] || 220;
+  const result = new Uint8Array(gray.length);
+
+  for (let i = 0; i < gray.length; i++) {
+    result[i] = gray[i] > thresh ? 255 : 0;
+  }
+  return result;
+}
+
+function findBlobs(motionMap, w, h) {
+  // Simple connected-component-like blob detection via grid scanning
+  const cellSize = 20;
+  const cols = Math.ceil(w / cellSize);
+  const rows = Math.ceil(h / cellSize);
+  const grid = new Uint16Array(cols * rows);
+
+  // Count motion pixels per cell
+  for (let y = 0; y < h; y++) {
+    const row = Math.min((y / cellSize) | 0, rows - 1);
+    for (let x = 0; x < w; x++) {
+      if (motionMap[y * w + x]) {
+        const col = Math.min((x / cellSize) | 0, cols - 1);
+        grid[row * cols + col]++;
+      }
+    }
+  }
+
+  // Find active cells and merge into blobs
+  const minCount = cellSize * cellSize * 0.08;
+  const blobs = [];
+  const visited = new Set();
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const idx = r * cols + c;
+      if (grid[idx] > minCount && !visited.has(idx)) {
+        // BFS to find connected active cells
+        const queue = [idx];
+        visited.add(idx);
+        let minX = c, maxX = c, minY = r, maxY = r;
+        let totalPixels = 0;
+
+        while (queue.length > 0) {
+          const curr = queue.shift();
+          const cr = (curr / cols) | 0;
+          const cc = curr % cols;
+          totalPixels += grid[curr];
+
+          // Check 4-neighbors
+          for (const [dr, dc] of [[0,1],[0,-1],[1,0],[-1,0]]) {
+            const nr = cr + dr;
+            const nc = cc + dc;
+            if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+              const ni = nr * cols + nc;
+              if (grid[ni] > minCount && !visited.has(ni)) {
+                visited.add(ni);
+                queue.push(ni);
+                minX = Math.min(minX, nc);
+                maxX = Math.max(maxX, nc);
+                minY = Math.min(minY, nr);
+                maxY = Math.max(maxY, nr);
+              }
+            }
+          }
+        }
+
+        // Only keep blobs of reasonable size (vehicle-sized)
+        const blobW = (maxX - minX + 1) * cellSize;
+        const blobH = (maxY - minY + 1) * cellSize;
+        const minSize = Math.min(w, h) * 0.03;
+        const maxSize = Math.max(w, h) * 0.8;
+
+        if (blobW > minSize && blobH > minSize && blobW < maxSize && blobH < maxSize && totalPixels > 30) {
+          blobs.push({
+            x: minX * cellSize,
+            y: minY * cellSize,
+            w: blobW,
+            h: blobH,
+            cx: (minX + (maxX - minX + 1) / 2) * cellSize,
+            cy: (minY + (maxY - minY + 1) / 2) * cellSize,
+            pixels: totalPixels
+          });
+        }
+      }
+    }
+  }
+
+  return blobs;
+}
+
+// ========== TRACKING ==========
+function trackBlobs(blobs) {
+  const maxMatchDist = videoWidth * 0.2;
+  const now = performance.now();
+
+  // Try to match blobs to existing tracked objects
+  const matched = new Set();
+  const usedBlobs = new Set();
+
+  for (const obj of trackedObjects) {
+    let bestDist = maxMatchDist;
+    let bestBlob = null;
+    let bestIdx = -1;
+
+    for (let i = 0; i < blobs.length; i++) {
+      if (usedBlobs.has(i)) continue;
+      const dx = blobs[i].cx - obj.cx;
+      const dy = blobs[i].cy - obj.cy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestBlob = blobs[i];
+        bestIdx = i;
+      }
+    }
+
+    if (bestBlob) {
+      // Update tracked object
+      const dx = bestBlob.cx - obj.cx;
+      obj.positions.push({ x: bestBlob.cx, y: bestBlob.cy, t: now });
+      if (obj.positions.length > 30) obj.positions.shift();
+
+      obj.cx = bestBlob.cx;
+      obj.cy = bestBlob.cy;
+      obj.x = bestBlob.x;
+      obj.y = bestBlob.y;
+      obj.w = bestBlob.w;
+      obj.h = bestBlob.h;
+      obj.lastSeen = now;
+      obj.direction = dx > 0 ? 'right' : 'left';
+
+      // Calculate speed from recent positions
+      if (obj.positions.length >= 5) {
+        const speed = calculateSpeed(obj);
+        if (speed > 3 && speed < 120) {
+          obj.speed = speed;
+          obj.maxSpeed = Math.max(obj.maxSpeed || 0, speed);
+          currentSpeed = speed;
+          obj.hasValidSpeed = true;
+        }
+      }
+
+      matched.add(obj.id);
+      usedBlobs.add(bestIdx);
+    }
+  }
+
+  // Create new tracked objects for unmatched blobs
+  for (let i = 0; i < blobs.length; i++) {
+    if (!usedBlobs.has(i)) {
+      trackedObjects.push({
+        id: nextObjectId++,
+        cx: blobs[i].cx,
+        cy: blobs[i].cy,
+        x: blobs[i].x,
+        y: blobs[i].y,
+        w: blobs[i].w,
+        h: blobs[i].h,
+        positions: [{ x: blobs[i].cx, y: blobs[i].cy, t: now }],
+        lastSeen: now,
+        created: now,
+        speed: 0,
+        maxSpeed: 0,
+        direction: '',
+        hasValidSpeed: false,
+        logged: false
+      });
+    }
+  }
+
+  // Remove stale objects and log completed detections
+  trackedObjects = trackedObjects.filter(obj => {
+    const age = now - obj.lastSeen;
+    if (age > 800) { // lost for 800ms
+      // Log if it had a valid speed
+      if (obj.hasValidSpeed && obj.maxSpeed > 3 && !obj.logged) {
+        logSpeed(obj.maxSpeed, obj.direction);
+        obj.logged = true;
+      }
+      return false;
+    }
+    return true;
+  });
+
+  // Update status indicator
+  const detecting = trackedObjects.some(o => o.hasValidSpeed);
+  const statusDot = document.getElementById('status-dot');
+  const statusText = document.getElementById('status-text');
+
+  if (detecting) {
+    statusDot.className = 'status-dot detecting';
+    statusText.textContent = 'Tracking';
+  } else if (trackedObjects.length > 0) {
+    statusDot.className = 'status-dot detecting';
+    statusText.textContent = 'Motion';
+  } else {
+    statusDot.className = 'status-dot';
+    statusText.textContent = 'Monitoring';
+
+    // Decay speed display
+    if (!speedDecayTimer && currentSpeed !== null) {
+      speedDecayTimer = setTimeout(() => {
+        currentSpeed = null;
+        speedDecayTimer = null;
+      }, 2000);
+    }
+  }
+}
+
+function calculateSpeed(obj) {
+  const positions = obj.positions;
+  const recent = positions.slice(-10);
+  if (recent.length < 3) return 0;
+
+  // Calculate average pixel velocity over recent positions
+  let totalDx = 0;
+  let totalDt = 0;
+
+  for (let i = 1; i < recent.length; i++) {
+    totalDx += Math.abs(recent[i].x - recent[i - 1].x);
+    totalDt += recent[i].t - recent[i - 1].t;
+  }
+
+  if (totalDt === 0) return 0;
+
+  const pixelsPerMs = totalDx / totalDt;
+  const pixelsPerSec = pixelsPerMs * 1000;
+
+  // Convert pixels to feet using calibration
+  const feetPerSec = pixelsPerSec / calibration.pixelsPerFoot;
+
+  // Adjust for camera angle
+  const angleRad = (calibration.angle * Math.PI) / 180;
+  const adjustedFeetPerSec = feetPerSec * Math.sin(angleRad);
+
+  // Convert to mph
+  const mph = adjustedFeetPerSec * 0.681818;
+
+  // Convert to kmh if needed
+  if (settings.units === 'kmh') {
+    return mph * 1.60934;
+  }
+
+  return mph;
+}
+
+// ========== SPEED DISPLAY ==========
+function updateSpeedDisplay() {
+  const display = document.getElementById('speed-display');
+  const valueEl = document.getElementById('speed-value');
+
+  if (currentSpeed !== null && currentSpeed > 3) {
+    const rounded = Math.round(currentSpeed);
+    valueEl.textContent = rounded;
+
+    const limit = parseInt(settings.speedLimit);
+    if (rounded > limit) {
+      display.classList.add('over-limit');
+      if (settings.alerts) {
+        document.getElementById('flash-overlay').classList.add('active');
+        setTimeout(() => document.getElementById('flash-overlay').classList.remove('active'), 150);
+      }
+      if (settings.sound) playBeep();
+    } else {
+      display.classList.remove('over-limit');
+    }
+  } else {
+    valueEl.textContent = '--';
+    display.classList.remove('over-limit');
+  }
+}
+
+// ========== OVERLAY DRAWING ==========
+function drawOverlay() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  for (const obj of trackedObjects) {
+    // Bounding box
+    const color = obj.hasValidSpeed && obj.speed > settings.speedLimit ? '#ff4444' : '#00d4ff';
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(obj.x, obj.y, obj.w, obj.h);
+
+    // Trail
+    if (obj.positions.length > 2) {
+      ctx.beginPath();
+      ctx.strokeStyle = color + '60';
+      ctx.lineWidth = 2;
+      ctx.moveTo(obj.positions[0].x, obj.positions[0].y);
+      for (let i = 1; i < obj.positions.length; i++) {
+        ctx.lineTo(obj.positions[i].x, obj.positions[i].y);
+      }
+      ctx.stroke();
+    }
+
+    // Speed label on box
+    if (obj.hasValidSpeed && obj.speed > 3) {
+      const label = Math.round(obj.speed) + ' ' + settings.units.toUpperCase();
+      ctx.font = 'bold 14px -apple-system, sans-serif';
+      const tm = ctx.measureText(label);
+      const lx = obj.x;
+      const ly = obj.y - 6;
+
+      ctx.fillStyle = color;
+      ctx.fillRect(lx - 2, ly - 14, tm.width + 8, 18);
+      ctx.fillStyle = '#000';
+      ctx.fillText(label, lx + 2, ly);
+    }
+  }
+}
+
+// ========== LOGGING ==========
+function logSpeed(speed, direction) {
+  const entry = {
+    speed: Math.round(speed),
+    unit: settings.units,
+    direction: direction || 'unknown',
+    time: Date.now(),
+    overLimit: speed > settings.speedLimit
+  };
+
+  speedLog.unshift(entry);
+  if (speedLog.length > 500) speedLog.pop();
+  saveState();
+  updateLogUI();
+}
+
+function updateLogUI() {
+  const countEl = document.getElementById('log-count');
+  countEl.textContent = speedLog.length;
+
+  const entriesEl = document.getElementById('log-entries');
+  if (speedLog.length === 0) {
+    entriesEl.innerHTML = '<div class="log-empty">No vehicles detected yet</div>';
+    return;
+  }
+
+  // Show last 50 entries
+  const html = speedLog.slice(0, 50).map(e => {
+    const date = new Date(e.time);
+    const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    const speedClass = e.overLimit ? 'over' : 'normal';
+    const dir = e.direction === 'right' ? '\u2192' : e.direction === 'left' ? '\u2190' : '\u2194';
+
+    return `<div class="log-entry">
+      <div class="log-speed ${speedClass}">${e.speed}</div>
+      <div class="log-meta">${timeStr}<br>${dateStr}</div>
+      <div class="log-direction">${dir} ${e.unit.toUpperCase()}</div>
+    </div>`;
+  }).join('');
+
+  entriesEl.innerHTML = html;
+}
+
+function toggleLog() {
+  const panel = document.getElementById('log-panel');
+  panel.classList.toggle('visible');
+}
+
+function clearLog() {
+  if (confirm('Clear all speed data?')) {
+    speedLog = [];
+    saveState();
+    updateLogUI();
+    document.getElementById('log-panel').classList.remove('visible');
+  }
+}
+
+function exportCSV() {
+  if (speedLog.length === 0) {
+    alert('No data to export');
+    return;
+  }
+
+  let csv = 'Date,Time,Speed,Unit,Direction,Over Limit\n';
+  for (const e of speedLog) {
+    const d = new Date(e.time);
+    csv += `${d.toLocaleDateString()},${d.toLocaleTimeString()},${e.speed},${e.unit},${e.direction},${e.overLimit}\n`;
+  }
+
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `speed-radar-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ========== NIGHT MODE ==========
+function toggleNightMode() {
+  const modes = ['auto', 'on', 'off'];
+  const current = modes.indexOf(settings.nightMode);
+  settings.nightMode = modes[(current + 1) % modes.length];
+  saveState();
+
+  const btn = document.getElementById('night-btn');
+  btn.textContent = settings.nightMode === 'auto' ? 'Night: Auto' : settings.nightMode === 'on' ? 'Night: On' : 'Night: Off';
+}
+
+// ========== AUDIO ==========
+let audioCtx = null;
+let lastBeep = 0;
+
+function playBeep() {
+  const now = Date.now();
+  if (now - lastBeep < 1000) return;
+  lastBeep = now;
+
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.frequency.value = 880;
+    gain.gain.value = 0.3;
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+    osc.stop(audioCtx.currentTime + 0.2);
+  } catch (e) {}
+}
+
+// ========== STARTUP ==========
+window.addEventListener('DOMContentLoaded', init);
+
+// Re-acquire wake lock on visibility change
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && isRunning) {
+    requestWakeLock();
+  }
+});
+</script>
+</body>
+</html>
