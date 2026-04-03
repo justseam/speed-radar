@@ -270,19 +270,19 @@
     padding: 8px 12px; font-size: 14px; color: var(--text); -webkit-appearance: none; outline: none; text-align: right; min-width: 80px;
   }
 
-  .toggle { position: relative; width: 48px; height: 28px; cursor: pointer; }
+  .toggle { position: relative; width: 51px; height: 31px; cursor: pointer; }
   .toggle input { display: none; }
   .toggle .slider {
-    position: absolute; inset: 0; background: #3a3a4a; border-radius: 14px;
-    border: 1.5px solid #555; transition: all 0.3s;
+    position: absolute; inset: 0; background: #48484a; border-radius: 16px;
+    transition: background 0.3s;
   }
   .toggle .slider::after {
-    content: ''; position: absolute; width: 22px; height: 22px; border-radius: 50%;
-    background: #ccc; top: 2px; left: 2px; transition: all 0.3s;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    content: ''; position: absolute; width: 27px; height: 27px; border-radius: 50%;
+    background: #fff; top: 2px; left: 2px; transition: transform 0.3s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
   }
-  .toggle input:checked + .slider { background: var(--accent); border-color: var(--accent); }
-  .toggle input:checked + .slider::after { transform: translateX(20px); background: #fff; }
+  .toggle input:checked + .slider { background: #30d158; }
+  .toggle input:checked + .slider::after { transform: translateX(20px); }
 
   .setting-btn {
     width: 100%; padding: 14px; border: 1.5px solid var(--border); border-radius: 10px;
@@ -315,6 +315,16 @@
     display: flex; gap: 10px; z-index: 6;
   }
   .roi-toolbar .btn { min-width: 100px; }
+
+  /* Camera toast notification */
+  .camera-toast {
+    position: absolute; top: 70px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); border-radius: 10px;
+    padding: 10px 18px; font-size: 13px; font-weight: 600; color: var(--text);
+    z-index: 15; pointer-events: none; opacity: 0; transition: opacity 0.3s;
+    white-space: nowrap;
+  }
+  .camera-toast.visible { opacity: 1; }
 
   .flash-overlay {
     position: fixed; inset: 0; background: rgba(255,0,0,0.15);
@@ -413,6 +423,7 @@
   <div class="video-container">
     <video id="camera-feed" autoplay playsinline muted></video>
     <canvas id="detection-canvas"></canvas>
+    <div class="camera-toast" id="camera-toast"></div>
     <canvas id="roi-canvas"></canvas>
     <canvas id="roi-dimmed" class="roi-dimmed"></canvas>
     <div class="roi-instructions" id="roi-instructions" style="display:none;">
@@ -455,7 +466,8 @@
   <div class="bottom-bar">
     <button class="bar-btn" id="log-toggle" onclick="toggleLog()">Log <span class="log-count" id="log-count">0</span></button>
     <button class="bar-btn" id="roi-btn" onclick="startROI()">Scan Zone</button>
-    <button class="bar-btn" onclick="showSettings()">Settings</button>
+    <button class="bar-btn" id="camera-btn" onclick="cycleCamera()">&#x1F4F7;</button>
+    <button class="bar-btn" onclick="showSettings()">&#x2699;</button>
     <div style="flex:1"></div>
     <button class="bar-btn" id="fps-display">-- fps</button>
   </div>
@@ -1404,6 +1416,34 @@ async function enumerateCameras() {
   } catch (e) {
     console.log('Could not enumerate cameras:', e);
   }
+}
+
+function showCameraToast(text) {
+  const toast = document.getElementById('camera-toast');
+  toast.textContent = text;
+  toast.classList.add('visible');
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => toast.classList.remove('visible'), 2000);
+}
+
+async function cycleCamera() {
+  if (availableCameras.length < 2) {
+    showCameraToast('No other cameras available');
+    return;
+  }
+  // Find current index
+  const currentId = settings.cameraDeviceId;
+  let idx = currentId ? availableCameras.findIndex(c => c.deviceId === currentId) : 0;
+  idx = (idx + 1) % availableCameras.length;
+  const next = availableCameras[idx];
+  settings.cameraDeviceId = next.deviceId;
+  saveState();
+  showCameraToast(next.label);
+  if (video && video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+  trackedVehicles.clear();
+  await startCamera();
+  // Update settings dropdown if open
+  document.getElementById('set-camera').value = next.deviceId;
 }
 
 async function switchCameraDevice(value) {
