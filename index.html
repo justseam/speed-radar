@@ -13,17 +13,19 @@
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
   :root {
-    --bg: #0a0a0f;
-    --surface: #13131a;
-    --surface2: #1c1c28;
-    --border: #2a2a3a;
-    --text: #e8e8f0;
-    --text-dim: #8888a0;
-    --accent: #00d4ff;
-    --accent-dim: rgba(0,212,255,0.15);
-    --danger: #ff4444;
-    --warning: #ffaa00;
-    --success: #44ff88;
+    --bg: #101827;
+    --surface: #1e293b;
+    --surface2: #334155;
+    --border: #475569;
+    --text: #f1f5f9;
+    --text-dim: #94a3b8;
+    --accent: #38bdf8;
+    --accent-dim: rgba(56,189,248,0.15);
+    --danger: #f87171;
+    --warning: #fbbf24;
+    --success: #34d399;
+    --toggle-bg: #64748b;
+    --toggle-on: #22d3ee;
   }
 
   body {
@@ -44,102 +46,55 @@
   /* LOADING SCREEN */
   #loading-screen {
     background: var(--bg);
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    gap: 16px;
+    justify-content: center; align-items: center; text-align: center; gap: 16px;
   }
-
   .loading-title {
-    font-size: 28px;
-    font-weight: 800;
-    background: linear-gradient(135deg, var(--accent), #0088ff);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    font-size: 28px; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), #818cf8);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   }
-
-  .loading-status {
-    font-size: 14px;
-    color: var(--text-dim);
-  }
-
-  .loading-bar-bg {
-    width: 200px;
-    height: 4px;
-    background: var(--surface2);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-
+  .loading-status { font-size: 14px; color: var(--text-dim); }
+  .loading-bar-bg { width: 200px; height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
   .loading-bar {
-    height: 100%;
-    width: 30%;
-    background: var(--accent);
-    border-radius: 2px;
+    height: 100%; width: 30%; background: var(--accent); border-radius: 2px;
     animation: loading-pulse 1.5s ease-in-out infinite;
   }
-
-  @keyframes loading-pulse {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(400%); }
-  }
+  @keyframes loading-pulse { 0% { transform: translateX(-100%); } 100% { transform: translateX(400%); } }
 
   /* CALIBRATION */
-  #calibration-screen {
-    background: var(--bg);
-    padding: 20px;
-    justify-content: center;
-    align-items: center;
-  }
-
+  #calibration-screen { background: var(--bg); padding: 20px; justify-content: center; align-items: center; }
   .cal-container { max-width: 400px; width: 100%; }
-
   .cal-header { text-align: center; margin-bottom: 30px; }
-
   .cal-header h1 {
-    font-size: 28px;
-    font-weight: 800;
-    background: linear-gradient(135deg, var(--accent), #0088ff);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 6px;
+    font-size: 28px; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), #818cf8);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 6px;
   }
-
   .cal-header p { font-size: 13px; color: var(--text-dim); }
-
   .cal-step-indicator { display: flex; gap: 8px; justify-content: center; margin-bottom: 24px; }
-
-  .cal-dot {
-    width: 10px; height: 10px; border-radius: 50%;
-    background: var(--border); transition: background 0.3s;
-  }
+  .cal-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
   .cal-dot.active { background: var(--accent); }
   .cal-dot.done { background: var(--success); }
-
   .cal-step { display: none; flex-direction: column; gap: 16px; }
   .cal-step.active { display: flex; }
   .cal-step h2 { font-size: 18px; font-weight: 700; text-align: center; }
   .cal-step p.desc { font-size: 13px; color: var(--text-dim); text-align: center; line-height: 1.5; }
-
   .cal-field { display: flex; flex-direction: column; gap: 6px; }
   .cal-field label { font-size: 12px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
   .cal-field input, .cal-field select {
-    background: var(--surface2); border: 1.5px solid var(--border); border-radius: 10px;
+    background: var(--surface); border: 1.5px solid var(--border); border-radius: 10px;
     padding: 14px 16px; font-size: 18px; font-weight: 600; color: var(--text); outline: none; -webkit-appearance: none;
   }
   .cal-field input:focus, .cal-field select:focus { border-color: var(--accent); }
   .cal-field .unit { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
-
   .cal-buttons { display: flex; gap: 12px; margin-top: 10px; }
-
   .btn { flex: 1; padding: 14px; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
   .btn-primary { background: var(--accent); color: #000; }
-  .btn-secondary { background: var(--surface2); color: var(--text); border: 1.5px solid var(--border); }
+  .btn-secondary { background: var(--surface); color: var(--text); border: 1.5px solid var(--border); }
   .btn:active { transform: scale(0.97); }
 
   /* MAIN RADAR SCREEN */
   #radar-screen { background: #000; }
-
   .video-container { position: relative; flex: 1; overflow: hidden; }
   #camera-feed { width: 100%; height: 100%; object-fit: cover; display: block; }
   #detection-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
@@ -150,33 +105,25 @@
     display: flex; justify-content: space-between; align-items: flex-start;
     pointer-events: none; z-index: 10;
   }
-
   .speed-display {
-    background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); border-radius: 16px;
-    padding: 12px 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1); pointer-events: auto;
+    background: rgba(15,23,42,0.75); backdrop-filter: blur(12px); border-radius: 16px;
+    padding: 12px 20px; text-align: center; border: 1px solid rgba(148,163,184,0.2); pointer-events: auto;
   }
-
   .speed-display .speed-value {
     font-size: 52px; font-weight: 800; line-height: 1; color: var(--accent);
     font-variant-numeric: tabular-nums; transition: color 0.2s;
   }
-
   .speed-display .speed-unit { font-size: 14px; font-weight: 600; color: var(--text-dim); margin-top: 2px; }
-
   .speed-display.over-limit .speed-value {
-    color: var(--danger);
-    animation: pulse-red 0.5s ease-in-out infinite alternate;
+    color: var(--danger); animation: pulse-red 0.5s ease-in-out infinite alternate;
   }
-
   @keyframes pulse-red { from { opacity: 1; } to { opacity: 0.6; } }
 
   .hud-right { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
-
   .hud-status {
-    background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); border-radius: 12px;
-    padding: 8px 14px; border: 1px solid rgba(255,255,255,0.1); pointer-events: auto;
+    background: rgba(15,23,42,0.75); backdrop-filter: blur(12px); border-radius: 12px;
+    padding: 8px 14px; border: 1px solid rgba(148,163,184,0.2); pointer-events: auto;
   }
-
   .status-dot {
     display: inline-block; width: 8px; height: 8px; border-radius: 50%;
     background: var(--success); margin-right: 6px; animation: blink 2s ease-in-out infinite;
@@ -184,41 +131,50 @@
   @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
   .status-dot.detecting { background: var(--warning); animation: none; }
   .status-dot.idle { background: var(--text-dim); }
-
   .status-text { font-size: 12px; font-weight: 600; color: var(--text); }
-
   .hud-model-info {
-    background: rgba(0,0,0,0.5); border-radius: 8px; padding: 4px 10px;
+    background: rgba(15,23,42,0.6); border-radius: 8px; padding: 4px 10px;
     font-size: 10px; color: var(--text-dim); pointer-events: auto;
   }
 
-  /* Bottom bar */
-  .bottom-bar {
-    display: flex; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);
-    padding: 10px 16px; padding-bottom: max(10px, env(safe-area-inset-bottom));
-    gap: 10px; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); z-index: 10;
+  /* Floating side buttons — left edge, vertically centered */
+  .floating-controls {
+    position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+    display: flex; flex-direction: column; gap: 8px; z-index: 10;
   }
+  .float-btn {
+    background: rgba(15,23,42,0.7); backdrop-filter: blur(10px);
+    border: 1px solid rgba(148,163,184,0.25); border-radius: 12px;
+    padding: 10px 12px; font-size: 11px; font-weight: 700; color: var(--text);
+    cursor: pointer; text-align: center; line-height: 1.2; letter-spacing: 0.5px;
+    text-transform: uppercase; min-width: 52px;
+  }
+  .float-btn.active { background: rgba(56,189,248,0.2); border-color: var(--accent); color: var(--accent); }
 
+  /* Bottom bar — simplified */
+  .bottom-bar {
+    display: flex; background: rgba(15,23,42,0.9); backdrop-filter: blur(12px);
+    padding: 8px 12px; padding-bottom: max(8px, env(safe-area-inset-bottom));
+    gap: 8px; align-items: center; border-top: 1px solid rgba(148,163,184,0.1); z-index: 10;
+  }
   .bar-btn {
-    background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
-    padding: 10px 14px; font-size: 13px; font-weight: 600; color: var(--text); cursor: pointer; white-space: nowrap;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 8px 12px; font-size: 12px; font-weight: 600; color: var(--text); cursor: pointer; white-space: nowrap;
   }
   .bar-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
-
   .log-count {
-    background: var(--accent); color: #000; font-size: 11px; font-weight: 700;
-    padding: 2px 6px; border-radius: 8px; margin-left: 4px;
+    background: var(--accent); color: #000; font-size: 10px; font-weight: 700;
+    padding: 1px 5px; border-radius: 6px; margin-left: 3px;
   }
 
   /* Log panel */
   .log-panel {
-    position: absolute; bottom: 60px; left: 0; right: 0; max-height: 45%;
-    background: rgba(0,0,0,0.9); backdrop-filter: blur(15px);
+    position: absolute; bottom: 50px; left: 0; right: 0; max-height: 45%;
+    background: rgba(15,23,42,0.92); backdrop-filter: blur(15px);
     border-top: 1px solid var(--border); border-radius: 16px 16px 0 0;
     overflow: hidden; display: none; flex-direction: column; z-index: 20;
   }
   .log-panel.visible { display: flex; }
-
   .log-header {
     display: flex; justify-content: space-between; align-items: center;
     padding: 14px 16px; border-bottom: 1px solid var(--border);
@@ -226,27 +182,23 @@
   .log-header h3 { font-size: 15px; font-weight: 700; }
   .log-header .log-actions { display: flex; gap: 8px; }
   .log-header .log-actions button {
-    background: var(--surface2); border: 1px solid var(--border); border-radius: 6px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
     padding: 4px 10px; font-size: 11px; font-weight: 600; color: var(--text-dim); cursor: pointer;
   }
-
   .log-entries { overflow-y: auto; -webkit-overflow-scrolling: touch; flex: 1; }
-
   .log-entry {
     display: flex; align-items: center; padding: 10px 16px;
-    border-bottom: 1px solid rgba(255,255,255,0.04); gap: 12px;
+    border-bottom: 1px solid rgba(148,163,184,0.06); gap: 12px;
   }
-
   .log-speed { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 70px; }
   .log-speed.normal { color: var(--accent); }
   .log-speed.over { color: var(--danger); }
   .log-meta { flex: 1; font-size: 12px; color: var(--text-dim); }
-  .log-type { font-size: 11px; font-weight: 600; color: var(--text); background: var(--surface2); padding: 2px 8px; border-radius: 4px; }
+  .log-type { font-size: 11px; font-weight: 600; color: var(--text); background: var(--surface); padding: 2px 8px; border-radius: 4px; }
   .log-empty { text-align: center; padding: 40px 20px; color: var(--text-dim); font-size: 14px; }
 
   /* SETTINGS SCREEN */
   #settings-screen { background: var(--bg); overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
-
   .settings-header {
     display: flex; align-items: center; padding: 16px 20px;
     padding-top: max(16px, env(safe-area-inset-top));
@@ -260,69 +212,67 @@
 
   .setting-row {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
-    gap: 12px;
+    padding: 14px 0; border-bottom: 1px solid rgba(148,163,184,0.08);
+    gap: 16px;
   }
-  .setting-row > div:first-child { flex: 1; min-width: 0; }
+  .setting-info { flex: 1; min-width: 0; }
   .setting-label { font-size: 15px; font-weight: 500; }
   .setting-desc { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
   .setting-control { flex-shrink: 0; }
 
   .setting-control select, .setting-control input[type="number"] {
-    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
-    padding: 8px 12px; font-size: 14px; color: var(--text); -webkit-appearance: none; outline: none; text-align: right; max-width: 180px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 12px; font-size: 14px; color: var(--text); -webkit-appearance: none; outline: none;
+    text-align: right; max-width: 170px;
   }
 
-  .toggle { position: relative; width: 51px; min-width: 51px; height: 31px; cursor: pointer; flex-shrink: 0; }
-  .toggle input { display: none; }
+  /* Toggle — iOS style, high contrast */
+  .toggle {
+    position: relative; display: block; width: 51px; height: 31px;
+    cursor: pointer; flex-shrink: 0;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
   .toggle .slider {
-    position: absolute; inset: 0; background: #48484a; border-radius: 16px;
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--toggle-bg); border-radius: 16px;
     transition: background 0.3s;
   }
   .toggle .slider::after {
     content: ''; position: absolute; width: 27px; height: 27px; border-radius: 50%;
-    background: #fff; top: 2px; left: 2px; transition: transform 0.3s;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    background: #ffffff; top: 2px; left: 2px; transition: transform 0.3s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
   }
-  .toggle input:checked + .slider { background: #30d158; }
+  .toggle input:checked + .slider { background: var(--toggle-on); }
   .toggle input:checked + .slider::after { transform: translateX(20px); }
 
   .setting-btn {
     width: 100%; padding: 14px; border: 1.5px solid var(--border); border-radius: 10px;
-    background: var(--surface2); color: var(--text); font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 8px; text-align: center;
+    background: var(--surface); color: var(--text); font-size: 15px; font-weight: 600;
+    cursor: pointer; margin-top: 8px; text-align: center;
   }
   .setting-btn.danger { border-color: var(--danger); color: var(--danger); }
 
   /* ROI scan zone overlay */
-  #roi-canvas {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    z-index: 5; display: none;
-  }
+  #roi-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; display: none; }
   #roi-canvas.active { display: block; }
-
-  .roi-dimmed {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    pointer-events: none; z-index: 4;
-  }
-
+  .roi-dimmed { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 4; }
   .roi-instructions {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); border-radius: 12px;
+    background: rgba(15,23,42,0.85); backdrop-filter: blur(8px); border-radius: 12px;
     padding: 16px 24px; text-align: center; z-index: 6; pointer-events: none;
   }
   .roi-instructions h3 { font-size: 16px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
   .roi-instructions p { font-size: 13px; color: var(--text-dim); }
-
   .roi-toolbar {
     position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%);
     display: flex; gap: 10px; z-index: 6;
   }
   .roi-toolbar .btn { min-width: 100px; }
 
-  /* Camera toast notification */
+  /* Camera toast */
   .camera-toast {
     position: absolute; top: 70px; left: 50%; transform: translateX(-50%);
-    background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); border-radius: 10px;
+    background: rgba(15,23,42,0.85); backdrop-filter: blur(10px); border-radius: 10px;
     padding: 10px 18px; font-size: 13px; font-weight: 600; color: var(--text);
     z-index: 15; pointer-events: none; opacity: 0; transition: opacity 0.3s;
     white-space: nowrap;
@@ -330,7 +280,7 @@
   .camera-toast.visible { opacity: 1; }
 
   .flash-overlay {
-    position: fixed; inset: 0; background: rgba(255,0,0,0.15);
+    position: fixed; inset: 0; background: rgba(248,113,113,0.15);
     pointer-events: none; z-index: 100; opacity: 0; transition: opacity 0.1s;
   }
   .flash-overlay.active { opacity: 1; }
@@ -452,6 +402,12 @@
       </div>
     </div>
 
+    <!-- Floating controls on left edge -->
+    <div class="floating-controls">
+      <button class="float-btn" id="camera-btn" onclick="cycleCamera()">Lens</button>
+      <button class="float-btn" id="roi-btn" onclick="startROI()">Zone</button>
+    </div>
+
     <div class="log-panel" id="log-panel">
       <div class="log-header">
         <h3>Speed Log</h3>
@@ -468,11 +424,9 @@
 
   <div class="bottom-bar">
     <button class="bar-btn" id="log-toggle" onclick="toggleLog()">Log <span class="log-count" id="log-count">0</span></button>
-    <button class="bar-btn" id="roi-btn" onclick="startROI()">Zone</button>
-    <button class="bar-btn" id="camera-btn" onclick="cycleCamera()">Lens</button>
     <button class="bar-btn" onclick="showSettings()">Settings</button>
     <div style="flex:1"></div>
-    <button class="bar-btn" id="fps-display">-- fps</button>
+    <span id="fps-display" style="font-size:11px;color:var(--text-dim);font-weight:600;font-variant-numeric:tabular-nums;">-- fps</span>
   </div>
 </div>
 
@@ -487,7 +441,7 @@
   <div class="settings-section">
     <h3>Speed</h3>
     <div class="setting-row">
-      <div><div class="setting-label">Speed Units</div></div>
+      <div class="setting-info"><div class="setting-label">Speed Units</div></div>
       <div class="setting-control">
         <select id="set-units" onchange="updateSetting('units', this.value)">
           <option value="mph">MPH</option>
@@ -496,19 +450,19 @@
       </div>
     </div>
     <div class="setting-row">
-      <div><div class="setting-label">Speed Limit</div><div class="setting-desc">Alert when exceeded</div></div>
+      <div class="setting-info"><div class="setting-label">Speed Limit</div><div class="setting-desc">Alert when exceeded</div></div>
       <div class="setting-control">
         <input type="number" id="set-limit" value="25" min="5" max="100" step="5" onchange="updateSetting('speedLimit', this.value)">
       </div>
     </div>
     <div class="setting-row">
-      <div><div class="setting-label">Speed Alerts</div><div class="setting-desc">Flash screen when over limit</div></div>
+      <div class="setting-info"><div class="setting-label">Speed Alerts</div><div class="setting-desc">Flash screen when over limit</div></div>
       <div class="setting-control">
         <label class="toggle"><input type="checkbox" id="set-alerts" checked onchange="updateSetting('alerts', this.checked)"><span class="slider"></span></label>
       </div>
     </div>
     <div class="setting-row">
-      <div><div class="setting-label">Sound Alerts</div><div class="setting-desc">Beep when over limit</div></div>
+      <div class="setting-info"><div class="setting-label">Sound Alerts</div><div class="setting-desc">Beep when over limit</div></div>
       <div class="setting-control">
         <label class="toggle"><input type="checkbox" id="set-sound" onchange="updateSetting('sound', this.checked)"><span class="slider"></span></label>
       </div>
@@ -518,7 +472,7 @@
   <div class="settings-section">
     <h3>Detection</h3>
     <div class="setting-row">
-      <div><div class="setting-label">Min Confidence</div><div class="setting-desc">AI detection threshold</div></div>
+      <div class="setting-info"><div class="setting-label">Min Confidence</div><div class="setting-desc">AI detection threshold</div></div>
       <div class="setting-control">
         <select id="set-confidence" onchange="updateSetting('minConfidence', parseFloat(this.value))">
           <option value="0.3">Low (30%)</option>
@@ -528,7 +482,7 @@
       </div>
     </div>
     <div class="setting-row">
-      <div><div class="setting-label">Min Track Frames</div><div class="setting-desc">Frames before logging speed</div></div>
+      <div class="setting-info"><div class="setting-label">Min Track Frames</div><div class="setting-desc">Frames before logging speed</div></div>
       <div class="setting-control">
         <select id="set-minframes" onchange="updateSetting('minTrackFrames', parseInt(this.value))">
           <option value="5">5 (fast)</option>
@@ -538,30 +492,29 @@
       </div>
     </div>
     <div class="setting-row">
-      <div><div class="setting-label">Camera</div><div class="setting-desc">Select lens (wide angle recommended)</div></div>
+      <div class="setting-info"><div class="setting-label">Camera</div><div class="setting-desc">Wide angle recommended</div></div>
       <div class="setting-control">
-        <select id="set-camera" onchange="switchCameraDevice(this.value)" style="min-width:140px;">
+        <select id="set-camera" onchange="switchCameraDevice(this.value)" style="max-width:160px;">
           <option value="environment">Back</option>
           <option value="user">Front</option>
         </select>
       </div>
     </div>
     <div class="setting-row">
-      <div><div class="setting-label">Scan Zone</div><div class="setting-desc">Limit detection to drawn area</div></div>
-      <div class="setting-control" style="display:flex;gap:8px;align-items:center;">
+      <div class="setting-info"><div class="setting-label">Scan Zone</div><div class="setting-desc">Limit detection area</div></div>
+      <div class="setting-control" style="display:flex;gap:6px;align-items:center;">
         <span id="roi-status" style="font-size:12px;color:var(--text-dim);">Full frame</span>
-        <button class="setting-btn" style="width:auto;margin:0;padding:8px 14px;font-size:13px;" onclick="clearROI();document.getElementById('roi-status').textContent='Full frame';">Clear</button>
-        <button class="setting-btn" style="width:auto;margin:0;padding:8px 14px;font-size:13px;" onclick="hideSettings();setTimeout(startROI,300);">Set</button>
+        <button class="setting-btn" style="width:auto;margin:0;padding:6px 12px;font-size:12px;" onclick="clearROI();document.getElementById('roi-status').textContent='Full frame';">Clear</button>
       </div>
     </div>
     <div class="setting-row">
-      <div><div class="setting-label">Show Tracking</div><div class="setting-desc">Display detection boxes</div></div>
+      <div class="setting-info"><div class="setting-label">Show Tracking</div><div class="setting-desc">Display detection boxes</div></div>
       <div class="setting-control">
         <label class="toggle"><input type="checkbox" id="set-overlay" checked onchange="updateSetting('showOverlay', this.checked)"><span class="slider"></span></label>
       </div>
     </div>
     <div class="setting-row">
-      <div><div class="setting-label">Keep Screen On</div></div>
+      <div class="setting-info"><div class="setting-label">Keep Screen On</div></div>
       <div class="setting-control">
         <label class="toggle"><input type="checkbox" id="set-wakelock" checked onchange="toggleWakeLock(this.checked)"><span class="slider"></span></label>
       </div>
@@ -581,7 +534,7 @@
   </div>
 
   <div style="padding: 20px; text-align: center;">
-    <p style="font-size: 11px; color: var(--text-dim);">Speed Radar v2.0<br>AI-powered with COCO-SSD vehicle detection<br>Accuracy varies with calibration quality</p>
+    <p style="font-size: 11px; color: var(--text-dim);">Speed Radar v3<br>AI-powered with COCO-SSD vehicle detection<br>Accuracy varies with calibration quality</p>
   </div>
 </div>
 
@@ -626,7 +579,7 @@ let cocoModel = null;
 const VEHICLE_CLASSES = ['car', 'truck', 'bus', 'motorcycle', 'bicycle'];
 
 // Tracking state
-let trackedVehicles = new Map(); // id -> vehicle object
+let trackedVehicles = new Map();
 let nextVehicleId = 0;
 let currentSpeed = null;
 let speedDecayTimer = null;
@@ -642,13 +595,11 @@ let videoWidth = 0, videoHeight = 0;
 async function init() {
   loadState();
 
-  // Load COCO-SSD model
   try {
     document.getElementById('loading-status').textContent = 'Loading AI vehicle detection model...';
     cocoModel = await cocoSsd.load({ base: 'lite_mobilenet_v2' });
     document.getElementById('loading-status').textContent = 'Model loaded! Starting...';
 
-    // Short delay so user sees success
     await new Promise(r => setTimeout(r, 500));
 
     if (localStorage.getItem('sr-calibrated')) {
@@ -717,7 +668,7 @@ function saveCalStep(step) {
 }
 
 function computeCalibration() {
-  const hFov = 70; // typical phone camera horizontal FOV in degrees
+  const hFov = 70;
   const angleRad = (calibration.angle * Math.PI) / 180;
   const fovRad = (hFov * Math.PI) / 180;
   const viewWidth = 2 * calibration.distance * Math.tan(fovRad / 2);
@@ -816,7 +767,6 @@ async function startCamera() {
       updateLogUI();
       updateROIDimmed();
       updateROIButton();
-      // Enumerate cameras after we have permission
       enumerateCameras();
     };
   } catch (err) {
@@ -849,7 +799,6 @@ async function detectLoop() {
 
   const now = performance.now();
 
-  // FPS counter
   frameCount++;
   if (now - lastFpsTime >= 1000) {
     fps = frameCount;
@@ -859,28 +808,20 @@ async function detectLoop() {
   }
 
   try {
-    // Run COCO-SSD detection on video frame
     const predictions = await cocoModel.detect(video, 20, settings.minConfidence);
-
-    // Filter to vehicle classes only, and apply ROI if set
     const vehicles = predictions.filter(p => VEHICLE_CLASSES.includes(p.class) && isInsideROI(p.bbox));
 
-    // Update tracking with detected vehicles
     trackVehicles(vehicles, now);
 
-    // Draw overlay
     if (settings.showOverlay) {
       drawOverlay(vehicles);
     } else {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      // Still draw ROI border even if tracking overlay is off
       if (roi) drawROIBorder();
     }
 
-    // Update speed display
     updateSpeedDisplay();
 
-    // Update status
     const activeTracked = [...trackedVehicles.values()].filter(v => v.positions.length >= 3);
     const statusDot = document.getElementById('status-dot');
     const statusText = document.getElementById('status-text');
@@ -909,7 +850,6 @@ function trackVehicles(detections, now) {
   const matched = new Set();
   const usedDetections = new Set();
 
-  // Match detections to existing tracked vehicles by center proximity + size similarity
   for (const [id, vehicle] of trackedVehicles) {
     let bestScore = Infinity;
     let bestIdx = -1;
@@ -925,9 +865,8 @@ function trackVehicles(detections, now) {
       const dy = detCy - vehicle.cy;
       const dist = Math.sqrt(dx * dx + dy * dy);
 
-      // Size similarity bonus
       const sizeRatio = Math.min(det.bbox[2], vehicle.w) / Math.max(det.bbox[2], vehicle.w);
-      const score = dist * (2 - sizeRatio); // lower is better
+      const score = dist * (2 - sizeRatio);
 
       if (dist < maxMatchDist && score < bestScore) {
         bestScore = score;
@@ -940,7 +879,6 @@ function trackVehicles(detections, now) {
       const newCx = det.bbox[0] + det.bbox[2] / 2;
       const newCy = det.bbox[1] + det.bbox[3] / 2;
 
-      // Record horizontal displacement
       const dx = newCx - vehicle.cx;
 
       vehicle.positions.push({ x: newCx, y: newCy, t: now });
@@ -958,7 +896,6 @@ function trackVehicles(detections, now) {
       vehicle.direction = dx > 2 ? 'right' : dx < -2 ? 'left' : vehicle.direction;
       vehicle.missedFrames = 0;
 
-      // Calculate speed once we have enough tracking data
       if (vehicle.positions.length >= settings.minTrackFrames) {
         const speed = calculateSpeed(vehicle);
         if (speed > 5 && speed < 150) {
@@ -967,7 +904,6 @@ function trackVehicles(detections, now) {
           vehicle.hasValidSpeed = true;
           currentSpeed = speed;
 
-          // Clear decay timer
           if (speedDecayTimer) { clearTimeout(speedDecayTimer); speedDecayTimer = null; }
         }
       }
@@ -979,7 +915,6 @@ function trackVehicles(detections, now) {
     }
   }
 
-  // Create new tracked vehicles for unmatched detections
   for (let i = 0; i < detections.length; i++) {
     if (usedDetections.has(i)) continue;
     const det = detections[i];
@@ -988,35 +923,24 @@ function trackVehicles(detections, now) {
 
     const id = nextVehicleId++;
     trackedVehicles.set(id, {
-      id,
-      cx, cy,
+      id, cx, cy,
       x: det.bbox[0], y: det.bbox[1], w: det.bbox[2], h: det.bbox[3],
       positions: [{ x: cx, y: cy, t: now }],
-      lastSeen: now,
-      created: now,
-      speed: 0,
-      maxSpeed: 0,
-      direction: '',
-      hasValidSpeed: false,
-      logged: false,
-      missedFrames: 0,
-      confidence: det.score,
-      class: det.class,
+      lastSeen: now, created: now,
+      speed: 0, maxSpeed: 0, direction: '',
+      hasValidSpeed: false, logged: false, missedFrames: 0,
+      confidence: det.score, class: det.class,
     });
   }
 
-  // Remove stale vehicles and log completed tracks
   for (const [id, vehicle] of trackedVehicles) {
-    // Remove if missed too many frames (vehicle left the scene)
     if (vehicle.missedFrames > 15 || (now - vehicle.lastSeen > 3000)) {
-      // Log speed if we got a valid reading
       if (vehicle.hasValidSpeed && vehicle.maxSpeed > 5 && !vehicle.logged) {
         logSpeed(vehicle.maxSpeed, vehicle.direction, vehicle.class);
         vehicle.logged = true;
       }
       trackedVehicles.delete(id);
 
-      // Start speed display decay
       if (!speedDecayTimer) {
         speedDecayTimer = setTimeout(() => { currentSpeed = null; speedDecayTimer = null; }, 2500);
       }
@@ -1026,14 +950,11 @@ function trackVehicles(detections, now) {
 
 function calculateSpeed(vehicle) {
   const positions = vehicle.positions;
-  const len = positions.length;
-  const recent = positions.slice(-12); // use last 12 positions for smoothing
+  const recent = positions.slice(-12);
   if (recent.length < 4) return 0;
 
-  // Use median of segment speeds to reject outliers
   const segmentSpeeds = [];
   for (let i = 2; i < recent.length; i++) {
-    // Use a 2-frame window for each segment to smooth jitter
     const dx = Math.abs(recent[i].x - recent[i - 2].x);
     const dt = recent[i].t - recent[i - 2].t;
     if (dt > 0) {
@@ -1049,7 +970,6 @@ function calculateSpeed(vehicle) {
 
   if (segmentSpeeds.length < 2) return 0;
 
-  // Median speed (robust to outliers)
   segmentSpeeds.sort((a, b) => a - b);
   const mid = Math.floor(segmentSpeeds.length / 2);
   let medianMph = segmentSpeeds.length % 2 === 0
@@ -1089,21 +1009,18 @@ function updateSpeedDisplay() {
 function drawOverlay(rawDetections) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Scale factors (canvas display vs video resolution)
   const sx = canvas.clientWidth / videoWidth;
   const sy = canvas.clientHeight / videoHeight;
 
   for (const [id, v] of trackedVehicles) {
-    if (v.missedFrames > 3) continue; // don't draw stale boxes
+    if (v.missedFrames > 3) continue;
 
-    const color = v.hasValidSpeed && v.speed > settings.speedLimit ? '#ff4444' : '#00d4ff';
+    const color = v.hasValidSpeed && v.speed > settings.speedLimit ? '#f87171' : '#38bdf8';
 
-    // Bounding box
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
     ctx.strokeRect(v.x * sx, v.y * sy, v.w * sx, v.h * sy);
 
-    // Trail line
     if (v.positions.length > 2) {
       ctx.beginPath();
       ctx.strokeStyle = color + '50';
@@ -1115,7 +1032,6 @@ function drawOverlay(rawDetections) {
       ctx.stroke();
     }
 
-    // Label
     const label = v.hasValidSpeed
       ? `${Math.round(v.speed)} ${settings.units} - ${v.class} ${Math.round(v.confidence * 100)}%`
       : `${v.class} ${Math.round(v.confidence * 100)}%`;
@@ -1131,7 +1047,6 @@ function drawOverlay(rawDetections) {
     ctx.fillText(label, lx + 2, ly);
   }
 
-  // Draw ROI border
   if (roi) drawROIBorder();
 }
 
@@ -1143,7 +1058,7 @@ function drawROIBorder() {
   const ry = roi.y * videoHeight * sy;
   const rw = roi.w * videoWidth * sx;
   const rh = roi.h * videoHeight * sy;
-  ctx.strokeStyle = '#00d4ff33';
+  ctx.strokeStyle = '#38bdf844';
   ctx.lineWidth = 1.5;
   ctx.setLineDash([8, 6]);
   ctx.strokeRect(rx, ry, rw, rh);
@@ -1252,7 +1167,6 @@ function startROI() {
   const rCtx = roiCanvas.getContext('2d');
   rCtx.clearRect(0, 0, roiCanvas.width, roiCanvas.height);
 
-  // Draw existing ROI if any
   if (roi) drawROIPreview(rCtx, roiCanvas);
 
   roiCanvas.ontouchstart = roiCanvas.onmousedown = (e) => {
@@ -1273,7 +1187,6 @@ function startROI() {
     const rCtx = roiCanvas.getContext('2d');
     rCtx.clearRect(0, 0, roiCanvas.width, roiCanvas.height);
 
-    // Dimmed area outside selection
     rCtx.fillStyle = 'rgba(0,0,0,0.5)';
     rCtx.fillRect(0, 0, roiCanvas.width, roiCanvas.height);
     const rx = Math.min(roiStart.x, roiCurrent.x);
@@ -1281,8 +1194,7 @@ function startROI() {
     const rw = Math.abs(roiCurrent.x - roiStart.x);
     const rh = Math.abs(roiCurrent.y - roiStart.y);
     rCtx.clearRect(rx, ry, rw, rh);
-    rCtx.strokeStyle = 'var(--accent)';
-    rCtx.strokeStyle = '#00d4ff';
+    rCtx.strokeStyle = '#38bdf8';
     rCtx.lineWidth = 2;
     rCtx.setLineDash([6, 4]);
     rCtx.strokeRect(rx, ry, rw, rh);
@@ -1316,6 +1228,7 @@ function clearROI() {
   roi = null;
   localStorage.removeItem('sr-roi');
   updateROIDimmed();
+  updateROIButton();
 }
 
 function endROI() {
@@ -1342,7 +1255,6 @@ function updateROIDimmed() {
 
   if (!roi) return;
 
-  // Draw dim overlay with clear cutout for ROI
   dCtx.fillStyle = 'rgba(0,0,0,0.4)';
   dCtx.fillRect(0, 0, dimCanvas.width, dimCanvas.height);
   const rx = roi.x * dimCanvas.width;
@@ -1350,7 +1262,7 @@ function updateROIDimmed() {
   const rw = roi.w * dimCanvas.width;
   const rh = roi.h * dimCanvas.height;
   dCtx.clearRect(rx, ry, rw, rh);
-  dCtx.strokeStyle = '#00d4ff44';
+  dCtx.strokeStyle = '#38bdf844';
   dCtx.lineWidth = 1.5;
   dCtx.strokeRect(rx, ry, rw, rh);
 }
@@ -1363,7 +1275,7 @@ function drawROIPreview(rCtx, roiCanvas) {
   const rw = roi.w * roiCanvas.width;
   const rh = roi.h * roiCanvas.height;
   rCtx.clearRect(rx, ry, rw, rh);
-  rCtx.strokeStyle = '#00d4ff';
+  rCtx.strokeStyle = '#38bdf8';
   rCtx.lineWidth = 2;
   rCtx.setLineDash([6, 4]);
   rCtx.strokeRect(rx, ry, rw, rh);
@@ -1383,7 +1295,6 @@ function updateROIButton() {
 
 function isInsideROI(bbox) {
   if (!roi) return true;
-  // bbox is in video coords, roi is normalized 0-1
   const cx = (bbox[0] + bbox[2] / 2) / videoWidth;
   const cy = (bbox[1] + bbox[3] / 2) / videoHeight;
   return cx >= roi.x && cx <= roi.x + roi.w && cy >= roi.y && cy <= roi.y + roi.h;
@@ -1402,18 +1313,15 @@ async function enumerateCameras() {
 
     const select = document.getElementById('set-camera');
     if (availableCameras.length > 2) {
-      // We have multiple cameras (likely wide, main, telephoto, front)
       select.innerHTML = '';
-      availableCameras.forEach((cam, i) => {
+      availableCameras.forEach((cam) => {
         const opt = document.createElement('option');
         opt.value = cam.deviceId;
-        // Try to identify wide angle by label
         let displayLabel = cam.label;
         if (/wide/i.test(cam.label)) displayLabel += ' \u2b50';
         opt.textContent = displayLabel;
         select.appendChild(opt);
       });
-      // Select current if saved
       if (settings.cameraDeviceId) select.value = settings.cameraDeviceId;
     }
     // Update lens button label for current camera
@@ -1439,7 +1347,6 @@ async function cycleCamera() {
     showCameraToast('No other cameras available');
     return;
   }
-  // Find current index
   const currentId = settings.cameraDeviceId;
   let idx = currentId ? availableCameras.findIndex(c => c.deviceId === currentId) : 0;
   idx = (idx + 1) % availableCameras.length;
@@ -1451,13 +1358,11 @@ async function cycleCamera() {
   if (video && video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
   trackedVehicles.clear();
   await startCamera();
-  // Update settings dropdown if open
   document.getElementById('set-camera').value = next.deviceId;
 }
 
 function updateLensButton(label) {
   const btn = document.getElementById('camera-btn');
-  // Shorten common iOS camera labels
   let short = 'Lens';
   if (/ultra wide/i.test(label)) short = 'Wide';
   else if (/wide/i.test(label)) short = '1x';
@@ -1468,7 +1373,6 @@ function updateLensButton(label) {
 }
 
 async function switchCameraDevice(value) {
-  // value could be a deviceId or 'environment'/'user'
   if (value === 'environment' || value === 'user') {
     settings.camera = value;
     settings.cameraDeviceId = null;
