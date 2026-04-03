@@ -273,21 +273,48 @@
   .toggle { position: relative; width: 48px; height: 28px; cursor: pointer; }
   .toggle input { display: none; }
   .toggle .slider {
-    position: absolute; inset: 0; background: var(--surface2); border-radius: 14px;
-    border: 1.5px solid var(--border); transition: all 0.3s;
+    position: absolute; inset: 0; background: #3a3a4a; border-radius: 14px;
+    border: 1.5px solid #555; transition: all 0.3s;
   }
   .toggle .slider::after {
     content: ''; position: absolute; width: 22px; height: 22px; border-radius: 50%;
-    background: var(--text-dim); top: 2px; left: 2px; transition: all 0.3s;
+    background: #ccc; top: 2px; left: 2px; transition: all 0.3s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
   }
   .toggle input:checked + .slider { background: var(--accent); border-color: var(--accent); }
-  .toggle input:checked + .slider::after { transform: translateX(20px); background: #000; }
+  .toggle input:checked + .slider::after { transform: translateX(20px); background: #fff; }
 
   .setting-btn {
     width: 100%; padding: 14px; border: 1.5px solid var(--border); border-radius: 10px;
     background: var(--surface2); color: var(--text); font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 8px; text-align: center;
   }
   .setting-btn.danger { border-color: var(--danger); color: var(--danger); }
+
+  /* ROI scan zone overlay */
+  #roi-canvas {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 5; display: none;
+  }
+  #roi-canvas.active { display: block; }
+
+  .roi-dimmed {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 4;
+  }
+
+  .roi-instructions {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); border-radius: 12px;
+    padding: 16px 24px; text-align: center; z-index: 6; pointer-events: none;
+  }
+  .roi-instructions h3 { font-size: 16px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+  .roi-instructions p { font-size: 13px; color: var(--text-dim); }
+
+  .roi-toolbar {
+    position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 10px; z-index: 6;
+  }
+  .roi-toolbar .btn { min-width: 100px; }
 
   .flash-overlay {
     position: fixed; inset: 0; background: rgba(255,0,0,0.15);
@@ -386,6 +413,16 @@
   <div class="video-container">
     <video id="camera-feed" autoplay playsinline muted></video>
     <canvas id="detection-canvas"></canvas>
+    <canvas id="roi-canvas"></canvas>
+    <canvas id="roi-dimmed" class="roi-dimmed"></canvas>
+    <div class="roi-instructions" id="roi-instructions" style="display:none;">
+      <h3>Draw Scan Zone</h3>
+      <p>Drag a rectangle over the area to monitor</p>
+    </div>
+    <div class="roi-toolbar" id="roi-toolbar" style="display:none;">
+      <button class="btn btn-secondary" onclick="cancelROI()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmROI()">Confirm</button>
+    </div>
 
     <div class="speed-hud">
       <div class="speed-display" id="speed-display">
@@ -417,6 +454,7 @@
 
   <div class="bottom-bar">
     <button class="bar-btn" id="log-toggle" onclick="toggleLog()">Log <span class="log-count" id="log-count">0</span></button>
+    <button class="bar-btn" id="roi-btn" onclick="startROI()">Scan Zone</button>
     <button class="bar-btn" onclick="showSettings()">Settings</button>
     <div style="flex:1"></div>
     <button class="bar-btn" id="fps-display">-- fps</button>
@@ -485,12 +523,20 @@
       </div>
     </div>
     <div class="setting-row">
-      <div><div class="setting-label">Camera</div></div>
+      <div><div class="setting-label">Camera</div><div class="setting-desc">Select lens (wide angle recommended)</div></div>
       <div class="setting-control">
-        <select id="set-camera" onchange="switchCamera(this.value)">
+        <select id="set-camera" onchange="switchCameraDevice(this.value)" style="min-width:140px;">
           <option value="environment">Back</option>
           <option value="user">Front</option>
         </select>
+      </div>
+    </div>
+    <div class="setting-row">
+      <div><div class="setting-label">Scan Zone</div><div class="setting-desc">Limit detection to drawn area</div></div>
+      <div class="setting-control" style="display:flex;gap:8px;align-items:center;">
+        <span id="roi-status" style="font-size:12px;color:var(--text-dim);">Full frame</span>
+        <button class="setting-btn" style="width:auto;margin:0;padding:8px 14px;font-size:13px;" onclick="clearROI();document.getElementById('roi-status').textContent='Full frame';">Clear</button>
+        <button class="setting-btn" style="width:auto;margin:0;padding:8px 14px;font-size:13px;" onclick="hideSettings();setTimeout(startROI,300);">Set</button>
       </div>
     </div>
     <div class="setting-row">
@@ -535,6 +581,7 @@ let settings = {
   minTrackFrames: 8,
   showOverlay: true,
   camera: 'environment',
+  cameraDeviceId: null,
 };
 
 let calibration = {
@@ -549,6 +596,13 @@ let speedLog = [];
 let calStep = 0;
 let isRunning = false;
 let wakeLock = null;
+
+// ROI (Region of Interest) scan zone — normalized 0-1 coords
+let roi = null; // { x, y, w, h } or null for full frame
+let roiDrawing = false;
+let roiStart = null;
+let roiCurrent = null;
+let availableCameras = []; // { deviceId, label }
 
 // AI Model
 let cocoModel = null;
@@ -692,7 +746,12 @@ function showSettings() {
   document.getElementById('set-confidence').value = settings.minConfidence;
   document.getElementById('set-minframes').value = settings.minTrackFrames;
   document.getElementById('set-overlay').checked = settings.showOverlay;
-  document.getElementById('set-camera').value = settings.camera;
+  if (settings.cameraDeviceId) {
+    document.getElementById('set-camera').value = settings.cameraDeviceId;
+  } else {
+    document.getElementById('set-camera').value = settings.camera;
+  }
+  document.getElementById('roi-status').textContent = roi ? 'Custom zone' : 'Full frame';
   document.getElementById('cal-summary').innerHTML =
     `Distance: <b>${calibration.distance} ft</b> | Height: <b>${calibration.height} ft</b><br>` +
     `Road Width: <b>${calibration.roadWidth} ft</b> | Angle: <b>${calibration.angle}&deg;</b>`;
@@ -713,10 +772,20 @@ async function startCamera() {
   canvas = document.getElementById('detection-canvas');
   ctx = canvas.getContext('2d');
 
+  // Load saved ROI
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: settings.camera, width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30 } }
-    });
+    const savedROI = localStorage.getItem('sr-roi');
+    if (savedROI) roi = JSON.parse(savedROI);
+  } catch (e) {}
+
+  try {
+    const videoConstraints = { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30 } };
+    if (settings.cameraDeviceId) {
+      videoConstraints.deviceId = { exact: settings.cameraDeviceId };
+    } else {
+      videoConstraints.facingMode = settings.camera;
+    }
+    const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints });
     video.srcObject = stream;
 
     video.onloadedmetadata = () => {
@@ -730,6 +799,10 @@ async function startCamera() {
       detectLoop();
       requestWakeLock();
       updateLogUI();
+      updateROIDimmed();
+      updateROIButton();
+      // Enumerate cameras after we have permission
+      enumerateCameras();
     };
   } catch (err) {
     alert('Camera access required. Please allow camera permission and reload.');
@@ -738,6 +811,7 @@ async function startCamera() {
 
 async function switchCamera(facing) {
   settings.camera = facing;
+  settings.cameraDeviceId = null;
   saveState();
   if (video && video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
   trackedVehicles.clear();
@@ -773,8 +847,8 @@ async function detectLoop() {
     // Run COCO-SSD detection on video frame
     const predictions = await cocoModel.detect(video, 20, settings.minConfidence);
 
-    // Filter to vehicle classes only
-    const vehicles = predictions.filter(p => VEHICLE_CLASSES.includes(p.class));
+    // Filter to vehicle classes only, and apply ROI if set
+    const vehicles = predictions.filter(p => VEHICLE_CLASSES.includes(p.class) && isInsideROI(p.bbox));
 
     // Update tracking with detected vehicles
     trackVehicles(vehicles, now);
@@ -784,6 +858,8 @@ async function detectLoop() {
       drawOverlay(vehicles);
     } else {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // Still draw ROI border even if tracking overlay is off
+      if (roi) drawROIBorder();
     }
 
     // Update speed display
@@ -1039,6 +1115,24 @@ function drawOverlay(rawDetections) {
     ctx.fillStyle = '#000';
     ctx.fillText(label, lx + 2, ly);
   }
+
+  // Draw ROI border
+  if (roi) drawROIBorder();
+}
+
+function drawROIBorder() {
+  if (!roi) return;
+  const sx = canvas.clientWidth / videoWidth;
+  const sy = canvas.clientHeight / videoHeight;
+  const rx = roi.x * videoWidth * sx;
+  const ry = roi.y * videoHeight * sy;
+  const rw = roi.w * videoWidth * sx;
+  const rh = roi.h * videoHeight * sy;
+  ctx.strokeStyle = '#00d4ff33';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([8, 6]);
+  ctx.strokeRect(rx, ry, rw, rh);
+  ctx.setLineDash([]);
 }
 
 // ========== LOGGING ==========
@@ -1125,6 +1219,205 @@ function playBeep() {
     gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
     osc.stop(audioCtx.currentTime + 0.2);
   } catch (e) {}
+}
+
+// ========== ROI SCAN ZONE ==========
+function startROI() {
+  const roiCanvas = document.getElementById('roi-canvas');
+  const container = document.querySelector('.video-container');
+  roiCanvas.width = container.clientWidth;
+  roiCanvas.height = container.clientHeight;
+  roiCanvas.classList.add('active');
+  document.getElementById('roi-instructions').style.display = '';
+  document.getElementById('roi-toolbar').style.display = '';
+  roiDrawing = true;
+  roiStart = null;
+  roiCurrent = null;
+
+  const rCtx = roiCanvas.getContext('2d');
+  rCtx.clearRect(0, 0, roiCanvas.width, roiCanvas.height);
+
+  // Draw existing ROI if any
+  if (roi) drawROIPreview(rCtx, roiCanvas);
+
+  roiCanvas.ontouchstart = roiCanvas.onmousedown = (e) => {
+    e.preventDefault();
+    const rect = roiCanvas.getBoundingClientRect();
+    const pt = e.touches ? e.touches[0] : e;
+    roiStart = { x: pt.clientX - rect.left, y: pt.clientY - rect.top };
+    roiCurrent = { ...roiStart };
+    document.getElementById('roi-instructions').style.display = 'none';
+  };
+
+  roiCanvas.ontouchmove = roiCanvas.onmousemove = (e) => {
+    if (!roiStart) return;
+    e.preventDefault();
+    const rect = roiCanvas.getBoundingClientRect();
+    const pt = e.touches ? e.touches[0] : e;
+    roiCurrent = { x: pt.clientX - rect.left, y: pt.clientY - rect.top };
+    const rCtx = roiCanvas.getContext('2d');
+    rCtx.clearRect(0, 0, roiCanvas.width, roiCanvas.height);
+
+    // Dimmed area outside selection
+    rCtx.fillStyle = 'rgba(0,0,0,0.5)';
+    rCtx.fillRect(0, 0, roiCanvas.width, roiCanvas.height);
+    const rx = Math.min(roiStart.x, roiCurrent.x);
+    const ry = Math.min(roiStart.y, roiCurrent.y);
+    const rw = Math.abs(roiCurrent.x - roiStart.x);
+    const rh = Math.abs(roiCurrent.y - roiStart.y);
+    rCtx.clearRect(rx, ry, rw, rh);
+    rCtx.strokeStyle = 'var(--accent)';
+    rCtx.strokeStyle = '#00d4ff';
+    rCtx.lineWidth = 2;
+    rCtx.setLineDash([6, 4]);
+    rCtx.strokeRect(rx, ry, rw, rh);
+    rCtx.setLineDash([]);
+  };
+
+  roiCanvas.ontouchend = roiCanvas.onmouseup = () => {};
+}
+
+function confirmROI() {
+  const roiCanvas = document.getElementById('roi-canvas');
+  if (roiStart && roiCurrent) {
+    const cw = roiCanvas.width;
+    const ch = roiCanvas.height;
+    const rx = Math.min(roiStart.x, roiCurrent.x) / cw;
+    const ry = Math.min(roiStart.y, roiCurrent.y) / ch;
+    const rw = Math.abs(roiCurrent.x - roiStart.x) / cw;
+    const rh = Math.abs(roiCurrent.y - roiStart.y) / ch;
+    if (rw > 0.05 && rh > 0.05) {
+      roi = { x: rx, y: ry, w: rw, h: rh };
+      localStorage.setItem('sr-roi', JSON.stringify(roi));
+      updateROIDimmed();
+    }
+  }
+  endROI();
+}
+
+function cancelROI() { endROI(); }
+
+function clearROI() {
+  roi = null;
+  localStorage.removeItem('sr-roi');
+  updateROIDimmed();
+}
+
+function endROI() {
+  const roiCanvas = document.getElementById('roi-canvas');
+  roiCanvas.classList.remove('active');
+  roiCanvas.ontouchstart = roiCanvas.onmousedown = null;
+  roiCanvas.ontouchmove = roiCanvas.onmousemove = null;
+  roiCanvas.ontouchend = roiCanvas.onmouseup = null;
+  document.getElementById('roi-instructions').style.display = 'none';
+  document.getElementById('roi-toolbar').style.display = 'none';
+  roiDrawing = false;
+  roiStart = null;
+  roiCurrent = null;
+  updateROIButton();
+}
+
+function updateROIDimmed() {
+  const dimCanvas = document.getElementById('roi-dimmed');
+  const container = document.querySelector('.video-container');
+  dimCanvas.width = container.clientWidth;
+  dimCanvas.height = container.clientHeight;
+  const dCtx = dimCanvas.getContext('2d');
+  dCtx.clearRect(0, 0, dimCanvas.width, dimCanvas.height);
+
+  if (!roi) return;
+
+  // Draw dim overlay with clear cutout for ROI
+  dCtx.fillStyle = 'rgba(0,0,0,0.4)';
+  dCtx.fillRect(0, 0, dimCanvas.width, dimCanvas.height);
+  const rx = roi.x * dimCanvas.width;
+  const ry = roi.y * dimCanvas.height;
+  const rw = roi.w * dimCanvas.width;
+  const rh = roi.h * dimCanvas.height;
+  dCtx.clearRect(rx, ry, rw, rh);
+  dCtx.strokeStyle = '#00d4ff44';
+  dCtx.lineWidth = 1.5;
+  dCtx.strokeRect(rx, ry, rw, rh);
+}
+
+function drawROIPreview(rCtx, roiCanvas) {
+  rCtx.fillStyle = 'rgba(0,0,0,0.5)';
+  rCtx.fillRect(0, 0, roiCanvas.width, roiCanvas.height);
+  const rx = roi.x * roiCanvas.width;
+  const ry = roi.y * roiCanvas.height;
+  const rw = roi.w * roiCanvas.width;
+  const rh = roi.h * roiCanvas.height;
+  rCtx.clearRect(rx, ry, rw, rh);
+  rCtx.strokeStyle = '#00d4ff';
+  rCtx.lineWidth = 2;
+  rCtx.setLineDash([6, 4]);
+  rCtx.strokeRect(rx, ry, rw, rh);
+  rCtx.setLineDash([]);
+}
+
+function updateROIButton() {
+  const btn = document.getElementById('roi-btn');
+  if (roi) {
+    btn.classList.add('active');
+    btn.textContent = 'Zone \u2713';
+  } else {
+    btn.classList.remove('active');
+    btn.textContent = 'Scan Zone';
+  }
+}
+
+function isInsideROI(bbox) {
+  if (!roi) return true;
+  // bbox is in video coords, roi is normalized 0-1
+  const cx = (bbox[0] + bbox[2] / 2) / videoWidth;
+  const cy = (bbox[1] + bbox[3] / 2) / videoHeight;
+  return cx >= roi.x && cx <= roi.x + roi.w && cy >= roi.y && cy <= roi.y + roi.h;
+}
+
+// ========== CAMERA ENUMERATION ==========
+async function enumerateCameras() {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    availableCameras = devices
+      .filter(d => d.kind === 'videoinput')
+      .map((d, i) => ({
+        deviceId: d.deviceId,
+        label: d.label || `Camera ${i + 1}`,
+      }));
+
+    const select = document.getElementById('set-camera');
+    if (availableCameras.length > 2) {
+      // We have multiple cameras (likely wide, main, telephoto, front)
+      select.innerHTML = '';
+      availableCameras.forEach((cam, i) => {
+        const opt = document.createElement('option');
+        opt.value = cam.deviceId;
+        // Try to identify wide angle by label
+        let displayLabel = cam.label;
+        if (/wide/i.test(cam.label)) displayLabel += ' \u2b50';
+        opt.textContent = displayLabel;
+        select.appendChild(opt);
+      });
+      // Select current if saved
+      if (settings.cameraDeviceId) select.value = settings.cameraDeviceId;
+    }
+  } catch (e) {
+    console.log('Could not enumerate cameras:', e);
+  }
+}
+
+async function switchCameraDevice(value) {
+  // value could be a deviceId or 'environment'/'user'
+  if (value === 'environment' || value === 'user') {
+    settings.camera = value;
+    settings.cameraDeviceId = null;
+  } else {
+    settings.cameraDeviceId = value;
+  }
+  saveState();
+  if (video && video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+  trackedVehicles.clear();
+  await startCamera();
 }
 
 // ========== STARTUP ==========
