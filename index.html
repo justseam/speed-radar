@@ -245,7 +245,7 @@
   .log-empty { text-align: center; padding: 40px 20px; color: var(--text-dim); font-size: 14px; }
 
   /* SETTINGS SCREEN */
-  #settings-screen { background: var(--bg); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  #settings-screen { background: var(--bg); overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
 
   .settings-header {
     display: flex; align-items: center; padding: 16px 20px;
@@ -255,22 +255,25 @@
   .settings-header h2 { flex: 1; font-size: 18px; font-weight: 700; text-align: center; }
   .settings-header .back-btn { background: none; border: none; color: var(--accent); font-size: 15px; font-weight: 600; cursor: pointer; padding: 4px 8px; }
 
-  .settings-section { padding: 20px; }
+  .settings-section { padding: 16px 20px; }
   .settings-section h3 { font-size: 11px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
 
   .setting-row {
     display: flex; justify-content: space-between; align-items: center;
     padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+    gap: 12px;
   }
+  .setting-row > div:first-child { flex: 1; min-width: 0; }
   .setting-label { font-size: 15px; font-weight: 500; }
   .setting-desc { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  .setting-control { flex-shrink: 0; }
 
   .setting-control select, .setting-control input[type="number"] {
     background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
-    padding: 8px 12px; font-size: 14px; color: var(--text); -webkit-appearance: none; outline: none; text-align: right; min-width: 80px;
+    padding: 8px 12px; font-size: 14px; color: var(--text); -webkit-appearance: none; outline: none; text-align: right; max-width: 180px;
   }
 
-  .toggle { position: relative; width: 51px; height: 31px; cursor: pointer; }
+  .toggle { position: relative; width: 51px; min-width: 51px; height: 31px; cursor: pointer; flex-shrink: 0; }
   .toggle input { display: none; }
   .toggle .slider {
     position: absolute; inset: 0; background: #48484a; border-radius: 16px;
@@ -465,9 +468,9 @@
 
   <div class="bottom-bar">
     <button class="bar-btn" id="log-toggle" onclick="toggleLog()">Log <span class="log-count" id="log-count">0</span></button>
-    <button class="bar-btn" id="roi-btn" onclick="startROI()">Scan Zone</button>
-    <button class="bar-btn" id="camera-btn" onclick="cycleCamera()">&#x1F4F7;</button>
-    <button class="bar-btn" onclick="showSettings()">&#x2699;</button>
+    <button class="bar-btn" id="roi-btn" onclick="startROI()">Zone</button>
+    <button class="bar-btn" id="camera-btn" onclick="cycleCamera()">Lens</button>
+    <button class="bar-btn" onclick="showSettings()">Settings</button>
     <div style="flex:1"></div>
     <button class="bar-btn" id="fps-display">-- fps</button>
   </div>
@@ -1374,7 +1377,7 @@ function updateROIButton() {
     btn.textContent = 'Zone \u2713';
   } else {
     btn.classList.remove('active');
-    btn.textContent = 'Scan Zone';
+    btn.textContent = 'Zone';
   }
 }
 
@@ -1413,6 +1416,11 @@ async function enumerateCameras() {
       // Select current if saved
       if (settings.cameraDeviceId) select.value = settings.cameraDeviceId;
     }
+    // Update lens button label for current camera
+    if (settings.cameraDeviceId) {
+      const current = availableCameras.find(c => c.deviceId === settings.cameraDeviceId);
+      if (current) updateLensButton(current.label);
+    }
   } catch (e) {
     console.log('Could not enumerate cameras:', e);
   }
@@ -1439,11 +1447,24 @@ async function cycleCamera() {
   settings.cameraDeviceId = next.deviceId;
   saveState();
   showCameraToast(next.label);
+  updateLensButton(next.label);
   if (video && video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
   trackedVehicles.clear();
   await startCamera();
   // Update settings dropdown if open
   document.getElementById('set-camera').value = next.deviceId;
+}
+
+function updateLensButton(label) {
+  const btn = document.getElementById('camera-btn');
+  // Shorten common iOS camera labels
+  let short = 'Lens';
+  if (/ultra wide/i.test(label)) short = 'Wide';
+  else if (/wide/i.test(label)) short = '1x';
+  else if (/tele/i.test(label)) short = 'Tele';
+  else if (/front/i.test(label) || /user/i.test(label)) short = 'Front';
+  else if (/back/i.test(label)) short = 'Back';
+  btn.textContent = short;
 }
 
 async function switchCameraDevice(value) {
